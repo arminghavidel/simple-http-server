@@ -18,20 +18,9 @@ public class Main {
 
         server.addHandler("/", (request, response) -> {
             try {
-                response.addHeader("Content-Type", "text/plain");
-                response.send("Hello from multithreaded server!");
+                response.send("{\"status\":\"success\", \"message\":\"Hello from multithreaded server!\"}");
             } catch (IOException e) {
                 logger.error("Error handling root request", e);
-                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        });
-
-        server.addHandler("/test", (request, response) -> {
-            try {
-                response.addHeader("Content-Type", "application/json");
-                response.send("{\"status\":\"success\"}");
-            } catch (IOException e) {
-                logger.error("Error handling test request", e);
                 response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         });

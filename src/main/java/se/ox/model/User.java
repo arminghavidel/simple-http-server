@@ -2,7 +2,7 @@ package se.ox.model;
 
 public class User {
 
-    private String id;
+    private Integer id;
     private String username;
 
     public User(Builder builder) {
@@ -10,7 +10,7 @@ public class User {
         this.username = builder.username;
     }
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -18,7 +18,7 @@ public class User {
         return username;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -26,11 +26,15 @@ public class User {
         this.username = username;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static class Builder {
-        private String id;
+        private Integer id;
         private String username;
 
-        public Builder id(String id) {
+        public Builder id(Integer id) {
             this.id = id;
             return this;
         }
@@ -38,6 +42,10 @@ public class User {
         public Builder username(String username) {
             this.username = username;
             return this;
+        }
+
+        public User build() {
+            return new User(this);
         }
     }
 }

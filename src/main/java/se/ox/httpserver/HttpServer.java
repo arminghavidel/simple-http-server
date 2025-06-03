@@ -3,6 +3,7 @@ package se.ox.httpserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.ox.handler.HttpHandler;
+import se.ox.helper.HttpHelper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,6 +11,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +45,10 @@ public class HttpServer {
         }
     }
 
+    public void addHandler(String path, HttpHandler handler) {
+        handlers.put(path, handler);
+    }
+
     private void handleConnection(Socket clientSocket) {
         try (
                 clientSocket;
@@ -64,36 +71,79 @@ public class HttpServer {
         String[] parts = requestLine.split(" ");
         if (parts.length < 2) {
             logger.warn("Malformed request: {}", requestLine);
-            sendError(out, HttpStatus.BAD_REQUEST);
+            HttpHelper.sendError(out, HttpStatus.BAD_REQUEST);
             return;
         }
 
         String method = parts[0];
-        String path = parts[1];
-        logger.info("Processing {} {}", method, path);
+        String fullPath = parts[1];
+        logger.info("Processing {} {}", method, fullPath);
 
-        handlePath(method, path, out);
+        String path;
+        Map<String, String> queryParams = new HashMap<>();
+        int queryIndex = fullPath.indexOf('?');
+        if (queryIndex >= 0) {
+            path = fullPath.substring(0, queryIndex);
+            String query = fullPath.substring(queryIndex + 1);
+            queryParams = parseParams(query);
+        } else {
+            path = fullPath;
+        }
+
+        Map<String, String> headers = readHeaders(in);
+        String body = readBody(in, headers);
+
+        handle(method, path, headers, body, out, queryParams);
     }
 
-    private void handlePath(String method, String path, OutputStream out) throws IOException {
+    private void handle(String method, String path, Map<String, String> headers, String body, OutputStream out, Map<String, String> queryParams) throws IOException {
         HttpHandler handler = handlers.get(path);
         if (handler != null) {
-            Request request = new Request(method, path);
+            Request request = new Request(method, path, headers, body, queryParams);
             Response response = new Response(out);
             handler.handle(request, response);
         } else {
             logger.warn("No handler found for path: {}", path);
-            sendError(out, HttpStatus.NOT_FOUND);
+            HttpHelper.sendError(out, HttpStatus.NOT_FOUND);
         }
     }
 
-    private void sendError(OutputStream out, HttpStatus status) throws IOException {
-        Response response = new Response(out);
-        response.setStatus(status);
-        response.send("Error: " + status.getStatusCode() + " " + status.name());
+    private static Map<String, String> readHeaders(BufferedReader in) throws IOException {
+        Map<String, String> headers = new HashMap<>();
+        String line;
+        while ((line = in.readLine()) != null && !line.isEmpty()) {
+            int colonIndex = line.indexOf(":");
+            if (colonIndex > 0) {
+                String key = line.substring(0, colonIndex).trim();
+                String value = line.substring(colonIndex + 1).trim();
+                headers.put(key, value);
+            }
+        }
+        return headers;
     }
 
-    public void addHandler(String path, HttpHandler handler) {
-        handlers.put(path, handler);
+    private static String readBody(BufferedReader in, Map<String, String> headers) throws IOException {
+        String body = "";
+        String contentLengthHeader = headers.get("Content-Length");
+        if (contentLengthHeader != null) {
+            int contentLength = Integer.parseInt(contentLengthHeader);
+            char[] bodyChars = new char[contentLength];
+            int read = in.read(bodyChars, 0, contentLength);
+            body = new String(bodyChars, 0, read);
+        }
+        return body;
+    }
+
+    private Map<String, String> parseParams(String query) {
+        Map<String, String> map = new HashMap<>();
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            String[] kv = pair.split("=", 2);
+            if (kv.length == 2) {
+                map.put(URLDecoder.decode(kv[0], StandardCharsets.UTF_8),
+                        URLDecoder.decode(kv[1], StandardCharsets.UTF_8));
+            }
+        }
+        return map;
     }
 }
