@@ -23,25 +23,42 @@ public class HttpServer {
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
 
     private final int port;
+    private ServerSocket serverSocket;
+    private ExecutorService executorService;
     private final Map<String, HttpHandler> handlers = new HashMap<>();
 
     public HttpServer(int port) {
         this.port = port;
     }
 
-    public void start() {
+    public void start() throws IOException {
 
-        try (
-                ServerSocket serverSocket = new ServerSocket(port);
-                ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()
-        ) {
+        serverSocket = new ServerSocket(port);
+        executorService = Executors.newVirtualThreadPerTaskExecutor();
+        Thread serverThread = new Thread(() -> {
             logger.info("Server started on port {}", port);
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                executorService.submit(() -> handleConnection(clientSocket));
+            while (!serverSocket.isClosed()) {
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    executorService.submit(() -> handleConnection(clientSocket));
+                } catch (IOException e) {
+                    if (serverSocket.isClosed()) {
+                        logger.info("Server socket closed, stopping server thread.");
+                    } else {
+                        logger.error("Error accepting connection", e);
+                    }
+                }
             }
-        } catch (IOException e) {
-            logger.error("Server startup failed on port {}", port, e);
+        });
+        serverThread.start();
+    }
+
+    public void stop() throws IOException {
+        if (serverSocket != null && !serverSocket.isClosed()) {
+            serverSocket.close();
+        }
+        if (executorService != null) {
+            executorService.shutdownNow();
         }
     }
 

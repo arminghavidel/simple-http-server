@@ -28,14 +28,25 @@ public class Response {
     }
 
     public void send(String body) throws IOException {
-        StringBuilder response = new StringBuilder();
-        response.append("HTTP/1.1 ").append(status.getStatusCode()).append(" ").append(status).append("\r\n");
-        response.append("Content-Type: application/json\r\n");
-        headers.forEach((k, v) -> response.append(k).append(": ").append(v).append("\r\n"));
+        StringBuilder response = getResponseWithHeaders();
         byte[] bodyBytes = body.getBytes();
         response.append("Content-Length: ").append(bodyBytes.length).append("\r\n\r\n");
         output.write(response.toString().getBytes());
         output.write(bodyBytes);
         output.flush();
+    }
+
+    public void send() throws IOException {
+        StringBuilder response = getResponseWithHeaders();
+        output.write(response.toString().getBytes());
+        output.flush();
+    }
+
+    private StringBuilder getResponseWithHeaders() {
+        StringBuilder response = new StringBuilder();
+        response.append("HTTP/1.1 ").append(status.getStatusCode()).append(" ").append(status).append("\r\n");
+        response.append("Content-Type: application/json\r\n");
+        headers.forEach((k, v) -> response.append(k).append(": ").append(v).append("\r\n"));
+        return response;
     }
 }

@@ -35,7 +35,7 @@ public class UserCrudHandler implements CrudHandler {
         logger.info("User {} created", user.getId());
 
         response.setStatus(HttpStatus.CREATED);
-        response.send("{\"status\":\"success\", \"id\": " + user.getId() + "}");
+        response.send("{\"status\":\"success\", \"id\": " + user.getId() + ", \"username\": \"" + user.getUsername() + "\" }");
     }
 
     @Override
@@ -65,7 +65,7 @@ public class UserCrudHandler implements CrudHandler {
         logger.info("User {} updated", user.getId());
 
         response.setStatus(HttpStatus.OK);
-        response.send("{\"status\":\"success\", \"id\": " + user.getId() + "}");
+        response.send("{\"status\":\"success\", \"id\": " + user.getId() + ", \"username\": \"" + user.getUsername() + "\" }");
     }
 
     @Override
@@ -77,7 +77,7 @@ public class UserCrudHandler implements CrudHandler {
         logger.info("User {} removed", id);
 
         response.setStatus(HttpStatus.NO_CONTENT);
-        response.send("{\"status\":\"success\", \"id\": " + id + "}");
+        response.send("");
     }
 
     private User getUser(Request request, Response response) throws IOException {
