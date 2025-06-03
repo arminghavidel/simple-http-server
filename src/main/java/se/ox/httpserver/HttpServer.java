@@ -47,33 +47,42 @@ public class HttpServer {
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 OutputStream out = clientSocket.getOutputStream()
         ) {
-
-            String requestLine = in.readLine();
-            if (requestLine == null) return;
-
-            logger.info("Received request: {}", requestLine);
-            String[] requestParts = requestLine.split(" ");
-            if (requestParts.length < 2) {
-                logger.warn("Malformed request: {}", requestLine);
-                sendError(out, HttpStatus.BAD_REQUEST);
-                return;
-            }
-
-            String method = requestParts[0];
-            String path = requestParts[1];
-            logger.info("Processing {} {}", method, path);
-            HttpHandler handler = handlers.get(path);
-
-            if (handler != null) {
-                Request request = new Request(method, path);
-                Response response = new Response(out);
-                handler.handle(request, response);
-            } else {
-                logger.warn("No handler found for path: {}", path);
-                sendError(out, HttpStatus.NOT_FOUND);
-            }
+            processRequest(in, out);
         } catch (IOException e) {
-            logger.error("Error handling connection: {}", e.getMessage());
+            logger.error("Error handling connection: {}", e.getMessage(), e);
+        }
+    }
+
+    private void processRequest(BufferedReader in, OutputStream out) throws IOException {
+
+        String requestLine = in.readLine();
+        if (requestLine == null)
+            return;
+
+        logger.info("Received request: {}", requestLine);
+        String[] parts = requestLine.split(" ");
+        if (parts.length < 2) {
+            logger.warn("Malformed request: {}", requestLine);
+            sendError(out, HttpStatus.BAD_REQUEST);
+            return;
+        }
+
+        String method = parts[0];
+        String path = parts[1];
+        logger.info("Processing {} {}", method, path);
+
+        handlePath(method, path, out);
+    }
+
+    private void handlePath(String method, String path, OutputStream out) throws IOException {
+        HttpHandler handler = handlers.get(path);
+        if (handler != null) {
+            Request request = new Request(method, path);
+            Response response = new Response(out);
+            handler.handle(request, response);
+        } else {
+            logger.warn("No handler found for path: {}", path);
+            sendError(out, HttpStatus.NOT_FOUND);
         }
     }
 
