@@ -9,7 +9,7 @@ public enum HttpStatus {
     UNAUTHORIZED(401),
     FORBIDDEN(403),
     INTERNAL_SERVER_ERROR(500),
-    ;
+    METHOD_NOT_ALLOWED(405);
 
     private final int statusCode;
 
