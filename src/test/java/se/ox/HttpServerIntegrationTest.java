@@ -49,6 +49,7 @@ class HttpServerIntegrationTest {
     @AfterAll
     public void stopServer() throws IOException {
         server.stop();
+        executorService.shutdown();
     }
 
     @Test
