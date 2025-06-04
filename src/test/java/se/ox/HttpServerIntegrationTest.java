@@ -22,8 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HttpServerIntegrationTest {
@@ -123,10 +122,9 @@ class HttpServerIntegrationTest {
     }
 
     @Test
-    void testConcurrentUserCreations() throws Exception {
+    void testConcurrentUserCreations() {
         int numThreads = 10;
 
-        long start = System.currentTimeMillis();
         CompletableFuture<?>[] futures = IntStream.range(0, numThreads)
                 .mapToObj(i -> CompletableFuture.runAsync(() -> {
                     try {
@@ -139,9 +137,6 @@ class HttpServerIntegrationTest {
                 }, executorService))
                 .toArray(CompletableFuture[]::new);
 
-        CompletableFuture.allOf(futures).get(10, TimeUnit.SECONDS);
-        long end = System.currentTimeMillis();
-        assertTrue((end - start) < 10000);
-
+        assertDoesNotThrow(() -> CompletableFuture.allOf(futures).get(10, TimeUnit.SECONDS));
     }
 }
