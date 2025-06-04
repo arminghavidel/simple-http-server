@@ -36,12 +36,6 @@ public class Response {
         output.flush();
     }
 
-    public void send() throws IOException {
-        StringBuilder response = getResponseWithHeaders();
-        output.write(response.toString().getBytes());
-        output.flush();
-    }
-
     private StringBuilder getResponseWithHeaders() {
         StringBuilder response = new StringBuilder();
         response.append("HTTP/1.1 ").append(status.getStatusCode()).append(" ").append(status).append("\r\n");

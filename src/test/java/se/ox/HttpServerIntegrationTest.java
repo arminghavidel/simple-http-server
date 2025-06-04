@@ -15,6 +15,12 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,8 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HttpServerIntegrationTest {
 
     private HttpServer server;
-    private static final int PORT = 8080;
     private HttpClient client;
+    private static final int PORT = 8080;
+    private ExecutorService executorService;
+
 
     @BeforeAll
     public void startServer() throws IOException {
@@ -35,6 +43,7 @@ class HttpServerIntegrationTest {
 
         server.start();
         client = HttpClient.newHttpClient();
+        executorService = Executors.newVirtualThreadPerTaskExecutor();
     }
 
     @AfterAll
@@ -44,15 +53,17 @@ class HttpServerIntegrationTest {
 
     @Test
     void testCreateUser() throws IOException, InterruptedException {
-        HttpResponse<String> response = createUser();
+        String username = "user-" + UUID.randomUUID();
+        HttpResponse<String> response = createUser(username);
 
-        assertEquals(201, response.statusCode(), "Expected HTTP 201 Created");
-        assertTrue(response.body().contains("testUser"), "Response should contain created username");
+        assertEquals(HttpStatus.CREATED.getStatusCode(), response.statusCode(), "Expected HTTP 201 Created");
+        assertTrue(response.body().contains(username), "Response should contain created username");
     }
 
     @Test
     void testGetUser() throws IOException, InterruptedException {
-        HttpResponse<String> user = createUser();
+        String username = "user-" + UUID.randomUUID();
+        HttpResponse<String> user = createUser(username);
         Map<String, String> userJson = JsonHelper.readJson(user.body());
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + PORT + "/users?id=" + JsonHelper.getString(userJson, "id")))
@@ -61,13 +72,14 @@ class HttpServerIntegrationTest {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertEquals(200, response.statusCode(), "Expected HTTP 200 OK");
-        assertTrue(response.body().contains("testUser"), "Response should contain username");
+        assertEquals(HttpStatus.OK.getStatusCode(), response.statusCode(), "Expected HTTP 200 OK");
+        assertTrue(response.body().contains(username), "Response should contain username");
     }
 
     @Test
     void testUpdateUser() throws IOException, InterruptedException {
-        HttpResponse<String> user = createUser();
+        String username = "user-" + UUID.randomUUID();
+        HttpResponse<String> user = createUser(username);
         Map<String, String> userJson = JsonHelper.readJson(user.body());
         String updateJson = "{\"username\":\"updatedTestUser\"}";
 
@@ -79,13 +91,14 @@ class HttpServerIntegrationTest {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertEquals(200, response.statusCode(), "Expected HTTP 200 OK");
+        assertEquals(HttpStatus.OK.getStatusCode(), response.statusCode(), "Expected HTTP 200 OK");
         assertTrue(response.body().contains("updatedTestUser"), "Response should reflect updated username");
     }
 
     @Test
     void testDeleteUser() throws IOException, InterruptedException {
-        HttpResponse<String> user = createUser();
+        String username = "user-" + UUID.randomUUID();
+        HttpResponse<String> user = createUser(username);
         Map<String, String> userJson = JsonHelper.readJson(user.body());
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + PORT + "/users?id=" + JsonHelper.getString(userJson, "id")))
@@ -96,8 +109,8 @@ class HttpServerIntegrationTest {
         assertEquals(HttpStatus.NO_CONTENT.getStatusCode(), response.statusCode(), "Expected HTTP 204 No Content");
     }
 
-    private HttpResponse<String> createUser() throws IOException, InterruptedException {
-        String userJson = "{\"username\":\"testUser\"}";
+    private HttpResponse<String> createUser(String username) throws IOException, InterruptedException {
+        String userJson = "{\"username\":\""+ username +"\"}";
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + PORT + "/users"))
@@ -106,5 +119,28 @@ class HttpServerIntegrationTest {
                 .build();
 
         return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    @Test
+    void testConcurrentUserCreations() throws Exception {
+        int numThreads = 10;
+
+        long start = System.currentTimeMillis();
+        CompletableFuture<?>[] futures = IntStream.range(0, numThreads)
+                .mapToObj(i -> CompletableFuture.runAsync(() -> {
+                    try {
+                        String username = "user-" + UUID.randomUUID();
+                        HttpResponse<String> response = createUser(username);
+                        assertEquals(HttpStatus.CREATED.getStatusCode(), response.statusCode());
+                    } catch (Exception e) {
+                        throw new AssertionError("Thread failed", e);
+                    }
+                }, executorService))
+                .toArray(CompletableFuture[]::new);
+
+        CompletableFuture.allOf(futures).get(10, TimeUnit.SECONDS);
+        long end = System.currentTimeMillis();
+        assertTrue((end - start) < 10000);
+
     }
 }

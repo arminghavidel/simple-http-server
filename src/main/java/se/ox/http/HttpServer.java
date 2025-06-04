@@ -9,9 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URLDecoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,7 +71,7 @@ public class HttpServer {
                 OutputStream out = clientSocket.getOutputStream()
         ) {
             processRequest(in, out);
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Error handling connection: {}", e.getMessage(), e);
         }
     }
@@ -118,6 +116,7 @@ public class HttpServer {
         if (handler != null) {
             Request request = new Request(method, path, headers, body, queryParams);
             Response response = new Response(out);
+            someDelay();
             handler.handle(request, response);
         } else {
             logger.warn("No handler found for path: {}", path);
@@ -162,5 +161,13 @@ public class HttpServer {
             }
         }
         return map;
+    }
+
+    private void someDelay(){
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
