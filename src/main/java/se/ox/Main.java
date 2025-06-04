@@ -11,7 +11,7 @@ public class Main {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(Main.class);
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException {
 
         int port = getPort(args);
         HttpServer server = new HttpServer(port);
