@@ -2,8 +2,8 @@ package se.ox;
 
 import org.slf4j.LoggerFactory;
 import se.ox.handler.UserCrudHandler;
-import se.ox.httpserver.HttpServer;
-import se.ox.httpserver.HttpStatus;
+import se.ox.http.HttpServer;
+import se.ox.http.HttpStatus;
 
 import java.io.IOException;
 

@@ -1,7 +1,7 @@
 package se.ox.handler;
 
-import se.ox.httpserver.Request;
-import se.ox.httpserver.Response;
+import se.ox.http.Request;
+import se.ox.http.Response;
 
 import java.io.IOException;
 

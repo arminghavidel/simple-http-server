@@ -1,4 +1,4 @@
-package se.ox.httpserver;
+package se.ox.http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

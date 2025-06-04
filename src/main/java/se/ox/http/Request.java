@@ -1,4 +1,4 @@
-package se.ox.httpserver;
+package se.ox.http;
 
 import java.util.Map;
 

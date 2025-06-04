@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import se.ox.handler.UserCrudHandler;
 import se.ox.helper.JsonHelper;
-import se.ox.httpserver.HttpServer;
-import se.ox.httpserver.HttpStatus;
+import se.ox.http.HttpServer;
+import se.ox.http.HttpStatus;
 
 import java.io.IOException;
 import java.net.URI;

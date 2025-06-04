@@ -1,7 +1,7 @@
 package se.ox.helper;
 
-import se.ox.httpserver.HttpStatus;
-import se.ox.httpserver.Response;
+import se.ox.http.HttpStatus;
+import se.ox.http.Response;
 
 import java.io.IOException;
 import java.io.OutputStream;

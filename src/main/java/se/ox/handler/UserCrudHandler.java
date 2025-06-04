@@ -4,9 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.ox.helper.HttpHelper;
 import se.ox.helper.JsonHelper;
-import se.ox.httpserver.HttpStatus;
-import se.ox.httpserver.Request;
-import se.ox.httpserver.Response;
+import se.ox.http.HttpStatus;
+import se.ox.http.Request;
+import se.ox.http.Response;
 import se.ox.model.User;
 
 import java.io.IOException;
